@@ -2,7 +2,7 @@
 
 Implementation of a worker pool with a job queue and stateful workers on Lithops.
 
-![diagram]("https://user-images.githubusercontent.com/33722759/116995522-745c8300-acda-11eb-8f5a-7702a4d657eb.png")
+![diagram](https://user-images.githubusercontent.com/33722759/116995522-745c8300-acda-11eb-8f5a-7702a4d657eb.png)
 
 The workers are long-lived functions that consume jobs from a job queue (Redis list). The driver only invokes the functions once,
 and subsequent `apply_map` generate individual jobs that are put in the queue. This is useful when the map function is fine-grained
