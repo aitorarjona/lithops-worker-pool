@@ -18,7 +18,7 @@ import os
 import logging
 from lithops.version import __version__
 from lithops.utils import setup_lithops_logger
-from lithops_workerpool.worker.handler import worker_handler
+from worker.handler import worker_handler
 from lithops.worker.utils import get_runtime_preinstalls
 
 logger = logging.getLogger('lithops.worker')

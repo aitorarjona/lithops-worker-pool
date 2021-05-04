@@ -41,10 +41,10 @@ COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 # Add Lithops worker pool handler
 RUN mkdir lithops_workerpool
 COPY lithops_workerpool_lambda.zip ${FUNCTION_DIR}
-COPY lambda/entrypoint.py .
-RUN unzip lithops_workerpool_lambda.zip && rm lithops_workerpool_lambda.zip
+COPY lambda_entrypoint.py ${FUNCTION_DIR}
+RUN unzip -j -d worker lithops_workerpool_lambda.zip && rm lithops_workerpool_lambda.zip
 
 # Put your dependencies here, using RUN pip install... or RUN apt install...
 
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
-CMD [ "entrypoint.lambda_handler" ]
+CMD [ "lambda_entrypoint.lambda_handler" ]

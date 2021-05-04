@@ -22,14 +22,15 @@ import msgpack
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+import lithops
 from lithops.config import extract_storage_config
 from lithops.executors import FunctionExecutor
 from lithops.constants import SERVERLESS
 from lithops.future import ResponseFuture
 from lithops.utils import uuid_str
-from lithops.job import create_map_job
+from .job import create_map_job
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(lithops.__name__)
 
 
 class WorkerPool:
@@ -123,8 +124,11 @@ class WorkerPool:
         self._fexec.wait(fs=worker_futures)
 
     def _init_worker(self, worker_id, payload):
+        print('invoke')
         start = time.time()
-        activation_id = self._fexec.invoker.compute_handler.invoke(payload)
+        activation_id = self._fexec.invoker.compute_handler.invoke(runtime_name=self._runtime_name,
+                                                                   memory=self._runtime_memory,
+                                                                   payload=payload)
         resp_time = format(round(time.time() - start, 3), '.3f')
 
         logger.debug('ExecutorID {} | Worker {} invoked ({}s) - Activation ID: {}'.format(self._fexec.executor_id,
@@ -134,6 +138,7 @@ class WorkerPool:
     def _schedule_job(self, job):
         t0 = time.time()
         job_payload = self._fexec.invoker._create_payload(job)
+        job_payload['func_hash'] = job.func_hash
         packed_payloads = []
         for call_id in range(job.total_calls):
             payload = copy.deepcopy(job_payload)
@@ -184,8 +189,11 @@ class WorkerPool:
                 init_job_futures.append(fut)
 
             # Create invocation payload
-            job_payloads = [copy.deepcopy(self._fexec.invoker._create_payload(init_job)) for _ in
-                            range(init_job.total_calls)]
+            job_payloads = []
+            for _ in range(init_job.total_calls):
+                job_payload = copy.deepcopy(self._fexec.invoker._create_payload(init_job))
+                job_payload['func_hash'] = init_job.func_hash
+                job_payloads.append(job_payload)
             call_ids = ["{:05d}".format(i) for i in range(init_job.total_calls)]
             data_byte_range = init_job.data_byte_ranges.pop()
 

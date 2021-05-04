@@ -28,6 +28,7 @@ import logging
 import traceback
 import msgpack
 import threading
+import redis
 from multiprocessing import Process, Pipe
 from distutils.util import strtobool
 from tblib import pickling_support
@@ -54,7 +55,7 @@ def worker_handler(payload):
 
     if 'user_agent' in config['redis']:
         del config['redis']['user_agent']
-    redis_client = payload.Redis(**config['redis'])
+    redis_client = redis.Redis(**config['redis'])
 
     storage_config = extract_storage_config(config)
     internal_storage = InternalStorage(storage_config)
@@ -150,18 +151,14 @@ def run_task(task, internal_storage):
 
         if show_memory_peak:
             mm_handler_conn, mm_conn = Pipe()
-            memory_monitor = Thread(target=memory_monitor_worker, args=(mm_conn,))
+            memory_monitor = threading.Thread(target=memory_monitor_worker, args=(mm_conn,))
             memory_monitor.start()
 
         task.stats_file = os.path.join(task.task_dir, 'task_stats.txt')
         handler_conn, jobrunner_conn = Pipe()
         taskrunner = TaskRunner(task, jobrunner_conn, internal_storage)
         logger.debug('Starting TaskRunner process')
-        jrp
-        if is_unix_system() or strtobool(os.environ.get('TASK_RUNNER_THREAD', "False")):
-            jrp = Thread(target=taskrunner.run)
-        else:
-            jrp = Process(target=taskrunner.run)
+        jrp = threading.Thread(target=taskrunner.run)
         jrp.start()
 
         jrp.join(task.execution_timeout)
@@ -346,8 +343,4 @@ def worker_run_task(task, internal_storage):
     task.func = get_function_and_modules(task, internal_storage)
     job_data = get_function_data(task, internal_storage)
     task.data = job_data.pop()
-    run_job(task, internal_storage)
-
-
-def pool_worker_handler(args):
-    pass
+    run_task(task, internal_storage)

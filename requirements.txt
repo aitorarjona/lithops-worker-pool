@@ -2,3 +2,4 @@ lithops==2.3.1
 redis
 msgpack
 diskcache
+boto3

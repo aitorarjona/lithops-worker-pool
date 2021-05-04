@@ -6,7 +6,7 @@ def map_func(x):
 
 
 worker_pool = WorkerPool(workers=2,
-                         runtime='aitorarjona/lithops-workerpool:0.1',
+                         runtime='aitorarjona/lithops-workerpool',
                          runtime_memory=256,
                          runtime_timeout=30,
                          wait_workers=True)
